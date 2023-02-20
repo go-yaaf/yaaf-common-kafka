@@ -23,4 +23,10 @@ Then import the validator package into your own code.
 	import "github.com/go-yaaf/yaaf-common-kafka"
 
 
+Building the Docker image
+------------
+Since this implementation depends on `librdkafka` package by Confluence, when using this library in your application, 
+you MUST install the `librdkafka` package in the application docker.
+Add these lines to your Dockerfile:
+
 

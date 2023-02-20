@@ -1,0 +1,16 @@
+version: '3.9'
+services:
+  kafka:
+    image: messagebird/gcloud-pubsub-emulator
+    restart: always
+    ports:
+      - "8681:8681"
+    environment:
+      PUBSUB_PROJECT1: "production,status,event:event-listener"
+      PUBSUB_PROJECT2: "staging,invoices:invoice-calculator,chats:slack-out:irc-out,notifications"
+
+
+
+
+
+
