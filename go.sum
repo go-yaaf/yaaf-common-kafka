@@ -39,6 +39,8 @@ github.com/frankban/quicktest v1.14.0/go.mod h1:NeW+ay9A/U67EYXNFA1nPE8e/tnQv/09
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/go-yaaf/yaaf-common v1.2.16 h1:DZ2dLjooduIFxe09cexmcgiPH2U1wINaZ2QmGg+StSU=
 github.com/go-yaaf/yaaf-common v1.2.16/go.mod h1:zr5kpg4TdAH3rBsbwKIWQkxJ20gVRsIpAvPthYg1Xdw=
+github.com/go-yaaf/yaaf-common v1.2.20 h1:e9AjinWix7MA2GUE7Nl2Yn8SrQFjf0HP1sYYhBEkJTA=
+github.com/go-yaaf/yaaf-common v1.2.20/go.mod h1:zr5kpg4TdAH3rBsbwKIWQkxJ20gVRsIpAvPthYg1Xdw=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/golang/mock v1.1.1/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=

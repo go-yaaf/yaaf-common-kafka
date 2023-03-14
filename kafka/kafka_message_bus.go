@@ -1,19 +1,16 @@
-package kafkaadp
+package kafka
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"time"
+
+	kaf "github.com/confluentinc/confluent-kafka-go/v2/kafka"
+
 	"github.com/go-yaaf/yaaf-common/config"
 	"github.com/go-yaaf/yaaf-common/entity"
 	"github.com/go-yaaf/yaaf-common/logger"
-	"time"
-
-	_ "encoding/json"
-	_ "github.com/google/uuid"
-
-	_ "github.com/go-yaaf/yaaf-common/logger"
 	. "github.com/go-yaaf/yaaf-common/messaging"
 )
 
@@ -31,7 +28,7 @@ func (r *kafkaAdapter) Subscribe(factory MessageFactory, callback SubscriptionCa
 	if err != nil {
 		return "", err
 	}
-	c, err := kafka.NewConsumer(&kafka.ConfigMap{
+	c, err := kaf.NewConsumer(&kaf.ConfigMap{
 		"bootstrap.servers":        bootstrapServers,
 		"broker.address.family":    "v4",
 		"group.id":                 subscriberName,
@@ -60,7 +57,7 @@ func (r *kafkaAdapter) Subscribe(factory MessageFactory, callback SubscriptionCa
 				}
 
 				switch e := ev.(type) {
-				case *kafka.Message:
+				case *kaf.Message:
 					message := factory()
 					if er := json.Unmarshal(e.Value, message); er != nil {
 						return
@@ -100,12 +97,12 @@ func (r *kafkaAdapter) Pop(factory MessageFactory, timeout time.Duration, queue 
 // CreateProducer creates message producer for specific topic
 func (r *kafkaAdapter) CreateProducer(topicName string) (IMessageProducer, error) {
 
-	producer, err := kafka.NewProducer(r.config)
+	producer, err := kaf.NewProducer(r.config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Kafka Producer: %s", err.Error())
 	}
 
-	var md *kafka.Metadata
+	var md *kaf.Metadata
 
 	// Try to connect to kafka for 1 minute, exit if connection failed
 	if md, err = producer.GetMetadata(&topicName, true, 60*1000); err != nil {
@@ -121,7 +118,7 @@ func (r *kafkaAdapter) CreateProducer(topicName string) (IMessageProducer, error
 		}
 	}
 
-	kp := &kafkaProducer{topicName: topicName, producer: producer, deliveryChan: make(chan kafka.Event)}
+	kp := &kafkaProducer{topicName: topicName, producer: producer, deliveryChan: make(chan kaf.Event)}
 	kp.run()
 	return kp, nil
 }
@@ -132,8 +129,8 @@ func (r *kafkaAdapter) CreateProducer(topicName string) (IMessageProducer, error
 
 type kafkaProducer struct {
 	topicName    string
-	producer     *kafka.Producer
-	deliveryChan chan kafka.Event
+	producer     *kaf.Producer
+	deliveryChan chan kaf.Event
 }
 
 // Close producer does nothing in this implementation
@@ -161,7 +158,7 @@ func (p *kafkaProducer) Publish(messages ...IMessage) error {
 func (p *kafkaProducer) publish(message IMessage) error {
 
 	// Set partition ket by message addressee
-	topicPartition := kafka.TopicPartition{Topic: &p.topicName, Partition: kafka.PartitionAny}
+	topicPartition := kaf.TopicPartition{Topic: &p.topicName, Partition: kaf.PartitionAny}
 	var partitionKey []byte = nil
 	if len(message.Addressee()) > 0 {
 		partitionKey = []byte(message.Addressee())
@@ -173,7 +170,7 @@ func (p *kafkaProducer) publish(message IMessage) error {
 		return fmt.Errorf("error marshaling message to Json: %s", err.Error())
 	}
 
-	err = p.producer.Produce(&kafka.Message{
+	err = p.producer.Produce(&kaf.Message{
 		TopicPartition: topicPartition,
 		Value:          data,
 		Key:            partitionKey,
@@ -191,7 +188,7 @@ func (p *kafkaProducer) run() {
 		for {
 			select {
 			case e := <-p.deliveryChan:
-				m := e.(*kafka.Message)
+				m := e.(*kaf.Message)
 
 				if m.TopicPartition.Error != nil {
 					logger.Error("Error delivering message via KAFKA: %s", m.TopicPartition.Error)
@@ -219,16 +216,16 @@ func (r *kafkaAdapter) createTopics(topics ...string) (err error) {
 		}
 	}()
 
-	specs := make([]kafka.TopicSpecification, 0)
+	specs := make([]kaf.TopicSpecification, 0)
 	for _, topic := range topics {
-		spec := kafka.TopicSpecification{
+		spec := kaf.TopicSpecification{
 			Topic:         topic,
 			NumPartitions: config.Get().TopicPartitions(),
 		}
 		specs = append(specs, spec)
 	}
 
-	_, err = r.client.CreateTopics(ctx, specs, kafka.SetAdminValidateOnly(false))
+	_, err = r.client.CreateTopics(ctx, specs, kaf.SetAdminValidateOnly(false))
 
 	if err != nil {
 		return fmt.Errorf("error creating KAFKA topic: %s", err.Error())

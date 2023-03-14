@@ -1,19 +1,21 @@
-package kafkaadp
+package kafka
 
 import (
 	"context"
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/go-yaaf/yaaf-common/config"
-	. "github.com/go-yaaf/yaaf-common/messaging"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/go-yaaf/yaaf-common/config"
+	. "github.com/go-yaaf/yaaf-common/messaging"
+
+	kaf "github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
 type kafkaAdapter struct {
-	client      *kafka.AdminClient
-	config      *kafka.ConfigMap
+	client      *kaf.AdminClient
+	config      *kaf.ConfigMap
 	subscribers map[string]chan bool
 }
 
@@ -26,7 +28,7 @@ func NewKafkaMessageBus(URI string) (mq IMessageBus, err error) {
 		return nil, fmt.Errorf("parsing URI: %s failed: %s", URI, err.Error())
 	}
 
-	conf := &kafka.ConfigMap{}
+	conf := &kaf.ConfigMap{}
 	conf.SetKey("bootstrap.servers", uri.Host)
 	conf.SetKey("go.batch.producer", true)
 	conf.SetKey("request.required.acks", "1")
@@ -34,7 +36,7 @@ func NewKafkaMessageBus(URI string) (mq IMessageBus, err error) {
 		conf.SetKey("debug", "protocol")
 	}
 
-	if client, er := kafka.NewAdminClient(conf); err != nil {
+	if client, er := kaf.NewAdminClient(conf); err != nil {
 		return nil, er
 	} else {
 		adapter := &kafkaAdapter{
@@ -63,22 +65,3 @@ func (r *kafkaAdapter) Close() error {
 	r.client.Close()
 	return nil
 }
-
-// region PRIVATE SECTION ----------------------------------------------------------------------------------------------
-
-// convert raw data to message
-//func rawToMessage(factory MessageFactory, bytes []byte) (IMessage, error) {
-//	message := factory()
-//	if err := json.Unmarshal(bytes, &message); err != nil {
-//		return nil, err
-//	} else {
-//		return message, nil
-//	}
-//}
-//
-//// convert message to raw data
-//func messageToRaw(message IMessage) ([]byte, error) {
-//	return json.Marshal(message)
-//}
-
-// endregion

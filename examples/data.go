@@ -1,10 +1,11 @@
-package test
+package examples
 
 import (
 	"fmt"
+	"time"
+
 	. "github.com/go-yaaf/yaaf-common/entity"
 	. "github.com/go-yaaf/yaaf-common/messaging"
-	"time"
 )
 
 // region Status data Model --------------------------------------------------------------------------------------------

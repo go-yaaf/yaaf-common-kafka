@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.0.2
-	github.com/go-yaaf/yaaf-common v1.2.16
+	github.com/go-yaaf/yaaf-common v1.2.20
 	github.com/google/uuid v1.3.0
 )
 

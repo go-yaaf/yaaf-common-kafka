@@ -3,6 +3,8 @@ package test
 import (
 	"github.com/go-yaaf/yaaf-common/logger"
 	"github.com/go-yaaf/yaaf-common/messaging"
+
+	k "github.com/go-yaaf/yaaf-common-kafka/kafka"
 )
 
 type StatusLogger struct {
@@ -31,16 +33,17 @@ func (p *StatusLogger) Topic(topic string) *StatusLogger {
 
 // Start the logger
 func (p *StatusLogger) Start() {
-	//if mq, err := ps.NewPubSubMessageBus(p.uri); err != nil {
-	//	logger.Error("error starting StatusLogger: %s", err.Error())
-	//	p.error = err
-	//} else {
-	//	if subscriber, er := mq.Subscribe(NewStatusMessage, p.processMessage, p.name, p.topic); er != nil {
-	//		logger.Error(er.Error())
-	//	} else {
-	//		logger.Info("StatusAggregator Subscriber: %s", subscriber)
-	//	}
-	//}
+
+	if mq, err := k.NewKafkaMessageBus(p.uri); err != nil {
+		logger.Error("error starting StatusLogger: %s", err.Error())
+		p.error = err
+	} else {
+		if subscriber, er := mq.Subscribe(NewStatusMessage, p.processMessage, p.name, p.topic); er != nil {
+			logger.Error(er.Error())
+		} else {
+			logger.Info("StatusAggregator Subscriber: %s", subscriber)
+		}
+	}
 }
 
 // GetError return error

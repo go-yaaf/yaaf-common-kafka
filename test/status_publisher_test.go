@@ -2,12 +2,14 @@ package test
 
 import (
 	"fmt"
-	"github.com/go-yaaf/yaaf-common/logger"
 	"math/rand"
 	"sync"
 	"time"
 
+	"github.com/go-yaaf/yaaf-common/logger"
 	"github.com/go-yaaf/yaaf-common/messaging"
+
+	k "github.com/go-yaaf/yaaf-common-kafka/kafka"
 )
 
 type StatusPublisher struct {
@@ -50,12 +52,12 @@ func (p *StatusPublisher) Interval(interval time.Duration) *StatusPublisher {
 
 // Start the publisher
 func (p *StatusPublisher) Start(wg *sync.WaitGroup) {
-	//if mq, err := ps.NewPubSubMessageBus(p.uri); err != nil {
-	//	p.error = err
-	//	wg.Done()
-	//} else {
-	//	go p.run(wg, mq)
-	//}
+	if mq, err := k.NewKafkaMessageBus(p.uri); err != nil {
+		p.error = err
+		wg.Done()
+	} else {
+		go p.run(wg, mq)
+	}
 }
 
 // GetError return error
