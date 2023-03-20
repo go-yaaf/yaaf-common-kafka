@@ -29,7 +29,9 @@ func NewKafkaMessageBus(URI string) (mq IMessageBus, err error) {
 	}
 
 	conf := &kaf.ConfigMap{}
-	conf.SetKey("bootstrap.servers", uri.Host)
+
+	bootstrapServers := fmt.Sprintf("PLAINTEXT://%s", uri.Host)
+	conf.SetKey("bootstrap.servers", bootstrapServers)
 	conf.SetKey("go.batch.producer", true)
 	conf.SetKey("request.required.acks", "1")
 	if strings.ToLower(config.Get().LogLevel()) == "debug" {
