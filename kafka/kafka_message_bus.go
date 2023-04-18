@@ -22,7 +22,7 @@ func (r *kafkaAdapter) Publish(messages ...IMessage) error {
 }
 
 // Subscribe on topics
-func (r *kafkaAdapter) Subscribe(factory MessageFactory, callback SubscriptionCallback, subscriberName string, topics ...string) (subscriptionId string, error error) {
+func (r *kafkaAdapter) Subscribe(subscriberName string, factory MessageFactory, callback SubscriptionCallback, topics ...string) (subscriptionId string, error error) {
 
 	bootstrapServers, err := r.config.Get("bootstrap.servers", "localhost:9200")
 	if err != nil {
@@ -123,6 +123,36 @@ func (r *kafkaAdapter) CreateProducer(topicName string) (IMessageProducer, error
 	return kp, nil
 }
 
+// CreateConsumer creates message consumer for a specific topic
+func (r *kafkaAdapter) CreateConsumer(subscriberName string, mf MessageFactory, topics ...string) (IMessageConsumer, error) {
+	if len(topics) != 1 {
+		return nil, fmt.Errorf("only one topic allawed in this implementation")
+	}
+	topicName := topics[0]
+
+	// Create Kafka consumer
+	bootstrapServers, err := r.config.Get("bootstrap.servers", "localhost:9200")
+	if err != nil {
+		return nil, err
+	}
+	consumer, err := kaf.NewConsumer(&kaf.ConfigMap{
+		"bootstrap.servers":        bootstrapServers,
+		"broker.address.family":    "v4",
+		"group.id":                 subscriberName,
+		"session.timeout.ms":       60000,
+		"auto.offset.reset":        "earliest",
+		"enable.auto.offset.store": true,
+	})
+
+	err = consumer.SubscribeTopics(topics, nil)
+	sId := entity.ID()
+	sChannel := make(chan bool)
+	r.subscribers[sId] = sChannel
+
+	kc := &kafkaConsumer{topicName: topicName, consumer: consumer, factory: mf}
+	return kc, nil
+}
+
 // endregion
 
 // region Producer actions ---------------------------------------------------------------------------------------------
@@ -200,6 +230,52 @@ func (p *kafkaProducer) run() {
 		}
 	}
 	go pump()
+}
+
+// endregion
+
+// region Producer actions ---------------------------------------------------------------------------------------------
+
+type kafkaConsumer struct {
+	topicName string
+	consumer  *kaf.Consumer
+	factory   MessageFactory
+}
+
+// Close producer does nothing in this implementation
+func (c *kafkaConsumer) Close() error {
+	return c.consumer.Close()
+}
+
+// Read message from topic, blocks until a new message arrive or until timeout expires
+// Use 0 instead of time.Duration for unlimited time
+// The standard way to use Read is by using infinite loop:
+//
+//	for {
+//		if msg, err := consumer.Read(time.Second * 5); err != nil {
+//			// Handle error
+//		} else {
+//			// Process message in a dedicated go routine
+//			go processTisMessage(msg)
+//		}
+//	}
+func (c *kafkaConsumer) Read(timeout time.Duration) (IMessage, error) {
+
+	ev := c.consumer.Poll(int(timeout.Milliseconds()))
+	if ev == nil {
+		return nil, fmt.Errorf("read timeout")
+	}
+
+	if kms, ok := ev.(*kaf.Message); ok {
+		message := c.factory()
+		if err := json.Unmarshal(kms.Value, message); err != nil {
+			return nil, err
+		} else {
+			return message, nil
+		}
+	} else {
+		return nil, fmt.Errorf("not kaf.Message")
+	}
 }
 
 // endregion
